@@ -204,7 +204,7 @@ def save_presentation_images():
 def fix_image_paths(content):
     # Replace GitHub raw URLs with local paths
     fixed_content = re.sub(
-        r'https://raw.githubusercontent.com/yourusername/cre-analysis/main/images/([^)]+)',
+        r'https://raw.githubusercontent.com/MurtazaKafka/datafest2025/main/images/([^)]+)',
         r'images/\1',
         content
     )
@@ -263,6 +263,9 @@ def main():
     # Display the current slide
     with st.container():
         st.markdown(f'<div class="slide-container">{slides[st.session_state.current_slide]}</div>', unsafe_allow_html=True)
+        
+        # Add this line to display dynamic visualizations
+        display_slide_visualizations(st.session_state.current_slide)
     
     # Navigation controls at the bottom
     create_navigation(st.session_state.current_slide, len(slides), position="bottom")
@@ -275,14 +278,70 @@ def main():
     with col2:
         st.markdown("Slide: " + str(st.session_state.current_slide + 1) + "/" + str(len(slides)))
 
-    # Additional code for the recovery patterns slide
-    if st.session_state.current_slide == 1:  # For the recovery patterns slide
+# Edit the presentation_app.py file to include this for all slides
+
+def display_slide_visualizations(slide_number):
+    """Display interactive visualizations based on the current slide."""
+    # Import necessary visualization functions
+    from capture_images import (load_data, create_recovery_analysis, 
+                               create_recovery_chart, create_occupancy_heatmap,
+                               create_3d_map, create_market_comparison,
+                               create_sunburst)
+    
+    # Load data once
+    occupancy_df, availability_df, occupancy_map_df = load_data()
+    recovery_df = create_recovery_analysis(occupancy_df)
+    
+    # Filter map data for 3D visualization
+    latest_period = occupancy_map_df['period'].max()
+    map_data = occupancy_map_df[occupancy_map_df['period'] == latest_period]
+    map_data = map_data.dropna(subset=['lat', 'lon'])
+    map_data = map_data.merge(
+        recovery_df[['market', 'recovery_percentage']],
+        on='market',
+        how='left'
+    )
+    
+    # Display visualization based on slide number
+    if slide_number == 1:  # Recovery Patterns slide
         with st.expander("Interactive Recovery Chart", expanded=True):
-            # Import data processing and visualization code from your other script
-            from capture_images import load_data, create_recovery_analysis, create_recovery_chart
-            occupancy_df, _, _ = load_data()
-            recovery_df = create_recovery_analysis(occupancy_df)
             fig = create_recovery_chart(recovery_df)
+            st.plotly_chart(fig, use_container_width=True)
+            
+        with st.expander("Animated Occupancy Trends", expanded=False):
+            # Create a simple animation using Plotly
+            import plotly.express as px
+            anim_data = occupancy_map_df.copy().dropna(subset=['lat', 'lon'])
+            fig = px.scatter_geo(
+                anim_data,
+                lat='lat',
+                lon='lon',
+                color='avg_occupancy_proportion',
+                size='avg_occupancy_proportion',
+                animation_frame='period',
+                hover_name='market',
+                scope='usa',
+                title='Office Occupancy Evolution (2020-2024)'
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+    elif slide_number == 2:  # Economic Correlations slide
+        with st.expander("3D Recovery Visualization", expanded=True):
+            fig = create_3d_map(map_data)
+            st.plotly_chart(fig, use_container_width=True)
+            
+        with st.expander("Market Comparison", expanded=False):
+            fig = create_market_comparison(occupancy_df, availability_df)
+            st.plotly_chart(fig, use_container_width=True)
+            
+    elif slide_number == 3:  # Strategic Implications slide
+        with st.expander("Market Occupancy Heatmap", expanded=True):
+            fig = create_occupancy_heatmap(occupancy_df)
+            st.plotly_chart(fig, use_container_width=True)
+            
+    elif slide_number == 4:  # Conclusions slide
+        with st.expander("Recovery Sunburst Visualization", expanded=True):
+            fig = create_sunburst(recovery_df)
             st.plotly_chart(fig, use_container_width=True)
 
 if __name__ == "__main__":
