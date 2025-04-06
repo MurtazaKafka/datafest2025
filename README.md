@@ -92,5 +92,3 @@ To regenerate the visualizations:
    ```
    streamlit run cre_presentation.py
    ```
-
-This will recreate all the interactive HTML files in the `plots` directory. 
