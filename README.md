@@ -88,9 +88,9 @@ To regenerate the visualizations:
    pip install -r requirements.txt
    ```
 
-2. Run the visualization script:
+2. Run the presentation script:
    ```
-   python simple_visualizer.py
+   streamlit run cre_presentation.py
    ```
 
 This will recreate all the interactive HTML files in the `plots` directory. 
